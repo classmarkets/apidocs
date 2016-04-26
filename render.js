@@ -21,7 +21,7 @@ process.stdin.on('end', function(chunk) {
 
   var options = {
     themeTemplate: "triple",
-    themeVariables: "default",
+    themeVariables: ["default", __dirname + '/theme.less'],
     themeFullWidth: false,
     themeCondenseNav: true,
     filterInput: false,
