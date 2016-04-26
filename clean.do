@@ -1,4 +1,4 @@
 redo-always
-rm -f apiary.apib apib.json
+rm -f apiary.apib dist/apib.json
 rm -f build/*.html
-rm -f html/*.html
+rm -f dist/*.html
