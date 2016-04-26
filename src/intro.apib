@@ -80,13 +80,18 @@ sanitize and/or escape properly.
 
 With the following exceptions, every change to the API is considered to break
 backwards compatibility and will result in a new version for affected
-endpoints. Changes we do not consider to break compatibility and may be
-introduced without prior notice are:
+endpoints.
+
+Changes we do not consider to break compatibility and may be introduced without
+prior notice are:
 
 * Adding a new attribute to a resource, be it at the top level or to any nested
   attribute.
 * Adding a new value to an enumeration, be it an attribute or a request
   parameter.
+* Removing an optional attribute or request parameter if and only if the API
+  can assume a sensible default behaviour when receiving this attribute or
+  parameter in the future.
 * Removing a value from an enumeration, be it an attribute or a request
   parameter, if and only if the API can assume a sensible default behaviour
   when receiving this value in the future.
