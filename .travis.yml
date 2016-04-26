@@ -9,6 +9,8 @@ before_deploy:
 
 deploy:
   - provider: gcs
+    on:
+      branch: master
     bucket: apidocs.classmarkets.com
     access_key_id: GOOG3AATVRJGLLHKMTW7
     secret_access_key:
