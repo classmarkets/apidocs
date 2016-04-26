@@ -1,2 +1,2 @@
 redo-always
-tree -H "." --prune -P '*.html|*.json|*.apib|*.txt|*.yaml|*.raml|*.yml'
+tree -H "." --noreport --prune -P '*.html|*.json|*.apib|*.txt|*.yaml|*.raml|*.yml'
