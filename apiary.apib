@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: https://api.classmarkets.com
+HOST: https://api.classmarkets.com/v1
 
 # classmarkets HTTP API
 
@@ -238,7 +238,7 @@ include your token in all further requests like so:
     Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
 
 
-First, issue an Access and Refresh token using the /auth/v1/token endpoint. You
+First, issue an Access and Refresh token using the /auth/token endpoint. You
 received your client id and secret when you registered for the API.
 
 
@@ -248,7 +248,7 @@ is disclosed, you should always make the scope as narrow as possible.
 
 
 ```
-POST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1
+POST /auth/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1
 Host: api.classmarkets.com
 Accept: application/json
 Accept-Encoding: gzip, deflate
@@ -274,13 +274,13 @@ Content-Type: application/json
 Include this token in all future requests like so:
 
 ```
-GET /search/v1/job-offer/6JV76J-339533 HTTP/1.1
+GET /search/job-offer/6JV76J-339533 HTTP/1.1
 Host: api.classmarkets.com
 Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
 ```
 -->
 
-## Access tokens [/auth/v1/token]
+## Access tokens [/auth/token]
 
 The classmarkets API requires all requests to be authorized. Before you can
 interact with the API in a meaningful way, you have to acquire an access token.
@@ -314,7 +314,7 @@ token before that time.
 -->
 
 
-### Authenticate with client credentials [POST /auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}]
+### Authenticate with client credentials [POST /auth/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}]
 
 While OAuth 2 specifies several authentication methods the API only supports
 the "client credentials" method. This method is suitable for applications that
@@ -362,7 +362,7 @@ habitasse platea dictumst. Proin commodo ante tellus. Donec ante mi, egestas
 eget felis id, sagittis imperdiet dolor. Duis aliquam mauris sed fringilla
 pharetra.
 
-## Get job offer [GET /search/v1/job-offer/{id}]
+## Get job offer [GET /search/job-offer/{id}]
 
 Retrieve single job offer listings by id.
 

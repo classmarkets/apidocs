@@ -9,7 +9,7 @@
       },
       {
         "name": "HOST",
-        "value": "https://api.classmarkets.com"
+        "value": "https://api.classmarkets.com/v1"
       }
     ],
     "name": "classmarkets HTTP API",
@@ -18,13 +18,13 @@
     "resourceGroups": [
       {
         "name": "Authentication and authorization",
-        "description": "<!--\nAll requests to endpoints other than the authentication endpoints must be\nauthorized with access tokens.\n\nFirst, acquire an access token using one of the methods described below. Then\ninclude your token in all further requests like so:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\n\nFirst, issue an Access and Refresh token using the /auth/v1/token endpoint. You\nreceived your client id and secret when you registered for the API.\n\n\nThe scope parameter will determine how powerful the access token is, e.g. what\ncan be done with it. To limit the possible damage that can be done if the token\nis disclosed, you should always make the scope as narrow as possible.\n\n\n```\nPOST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1\nHost: api.classmarkets.com\nAccept: application/json\nAccept-Encoding: gzip, deflate\nContent-Length: 0\n```\n\nAssuming the client id and secret are correct, the API will issue an access\ntoken.\n\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\", \n    \"expires_in\": 3600, \n    \"scope\": \"api.listings.readonly\", \n    \"token_type\": \"Bearer\"\n}\n```\n\n\nInclude this token in all future requests like so:\n\n```\nGET /search/v1/job-offer/6JV76J-339533 HTTP/1.1\nHost: api.classmarkets.com\nAuthorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n```\n-->\n\n",
+        "description": "<!--\nAll requests to endpoints other than the authentication endpoints must be\nauthorized with access tokens.\n\nFirst, acquire an access token using one of the methods described below. Then\ninclude your token in all further requests like so:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\n\nFirst, issue an Access and Refresh token using the /auth/token endpoint. You\nreceived your client id and secret when you registered for the API.\n\n\nThe scope parameter will determine how powerful the access token is, e.g. what\ncan be done with it. To limit the possible damage that can be done if the token\nis disclosed, you should always make the scope as narrow as possible.\n\n\n```\nPOST /auth/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1\nHost: api.classmarkets.com\nAccept: application/json\nAccept-Encoding: gzip, deflate\nContent-Length: 0\n```\n\nAssuming the client id and secret are correct, the API will issue an access\ntoken.\n\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\", \n    \"expires_in\": 3600, \n    \"scope\": \"api.listings.readonly\", \n    \"token_type\": \"Bearer\"\n}\n```\n\n\nInclude this token in all future requests like so:\n\n```\nGET /search/job-offer/6JV76J-339533 HTTP/1.1\nHost: api.classmarkets.com\nAuthorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n```\n-->\n\n",
         "resources": [
           {
             "element": "resource",
             "name": "Access tokens",
             "description": "The classmarkets API requires all requests to be authorized. Before you can\ninteract with the API in a meaningful way, you have to acquire an access token.\nYou will then present this access token in all following request headers, like\nso:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\nIf you are familiar with OAuth 2, feel free to skip the rest of this section.\n\nThe string \"UqMv7BFvQCmE84mqG7SWOw\" in the example above is the access token.\nTo you it is just an opaque string. Keep your tokens safe! Whoever gains\naccess to them can use the API on your behalf.\n\nTokens are acquired using one of the OAuth 2 authorization methods, also known\nas grant types.\n\nTo get the API to issue an access token, you will have to authenticate yourself\n(e.g. prove that you are you) and also indicate what you are planning to do\nwith your access token. The details of the authentication depend on the\n`grant_type` and are detailed below. The declaration of intend is always the\nsame and happens with the `scope` parameter.\n\n<!--\nThe access token has a limited lifetime, which is indicated in the `expires_in`\nresponse attribute (given in seconds). After that time, the access token is no\nlonger valid and a new token must be issued. Of course you can also issue a new\ntoken before that time.\n-->\n\n\n",
-            "uriTemplate": "/auth/v1/token",
+            "uriTemplate": "/auth/token",
             "model": {},
             "parameters": [],
             "actions": [
@@ -63,7 +63,7 @@
                 ],
                 "attributes": {
                   "relation": "",
-                  "uriTemplate": "/auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}"
+                  "uriTemplate": "/auth/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}"
                 },
                 "content": [],
                 "examples": [
@@ -110,7 +110,7 @@
             "element": "resource",
             "name": "Get job offer",
             "description": "",
-            "uriTemplate": "/search/v1/job-offer/{id}",
+            "uriTemplate": "/search/job-offer/{id}",
             "model": {},
             "parameters": [],
             "actions": [
@@ -131,7 +131,7 @@
                 ],
                 "attributes": {
                   "relation": "self",
-                  "uriTemplate": "/search/v1/job-offer/{id}"
+                  "uriTemplate": "/search/job-offer/{id}"
                 },
                 "content": [],
                 "examples": [
@@ -1348,13 +1348,13 @@
         "content": [
           {
             "element": "copy",
-            "content": "<!--\nAll requests to endpoints other than the authentication endpoints must be\nauthorized with access tokens.\n\nFirst, acquire an access token using one of the methods described below. Then\ninclude your token in all further requests like so:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\n\nFirst, issue an Access and Refresh token using the /auth/v1/token endpoint. You\nreceived your client id and secret when you registered for the API.\n\n\nThe scope parameter will determine how powerful the access token is, e.g. what\ncan be done with it. To limit the possible damage that can be done if the token\nis disclosed, you should always make the scope as narrow as possible.\n\n\n```\nPOST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1\nHost: api.classmarkets.com\nAccept: application/json\nAccept-Encoding: gzip, deflate\nContent-Length: 0\n```\n\nAssuming the client id and secret are correct, the API will issue an access\ntoken.\n\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\", \n    \"expires_in\": 3600, \n    \"scope\": \"api.listings.readonly\", \n    \"token_type\": \"Bearer\"\n}\n```\n\n\nInclude this token in all future requests like so:\n\n```\nGET /search/v1/job-offer/6JV76J-339533 HTTP/1.1\nHost: api.classmarkets.com\nAuthorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n```\n-->\n\n"
+            "content": "<!--\nAll requests to endpoints other than the authentication endpoints must be\nauthorized with access tokens.\n\nFirst, acquire an access token using one of the methods described below. Then\ninclude your token in all further requests like so:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\n\nFirst, issue an Access and Refresh token using the /auth/token endpoint. You\nreceived your client id and secret when you registered for the API.\n\n\nThe scope parameter will determine how powerful the access token is, e.g. what\ncan be done with it. To limit the possible damage that can be done if the token\nis disclosed, you should always make the scope as narrow as possible.\n\n\n```\nPOST /auth/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1\nHost: api.classmarkets.com\nAccept: application/json\nAccept-Encoding: gzip, deflate\nContent-Length: 0\n```\n\nAssuming the client id and secret are correct, the API will issue an access\ntoken.\n\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\", \n    \"expires_in\": 3600, \n    \"scope\": \"api.listings.readonly\", \n    \"token_type\": \"Bearer\"\n}\n```\n\n\nInclude this token in all future requests like so:\n\n```\nGET /search/job-offer/6JV76J-339533 HTTP/1.1\nHost: api.classmarkets.com\nAuthorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n```\n-->\n\n"
           },
           {
             "element": "resource",
             "name": "Access tokens",
             "description": "The classmarkets API requires all requests to be authorized. Before you can\ninteract with the API in a meaningful way, you have to acquire an access token.\nYou will then present this access token in all following request headers, like\nso:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\nIf you are familiar with OAuth 2, feel free to skip the rest of this section.\n\nThe string \"UqMv7BFvQCmE84mqG7SWOw\" in the example above is the access token.\nTo you it is just an opaque string. Keep your tokens safe! Whoever gains\naccess to them can use the API on your behalf.\n\nTokens are acquired using one of the OAuth 2 authorization methods, also known\nas grant types.\n\nTo get the API to issue an access token, you will have to authenticate yourself\n(e.g. prove that you are you) and also indicate what you are planning to do\nwith your access token. The details of the authentication depend on the\n`grant_type` and are detailed below. The declaration of intend is always the\nsame and happens with the `scope` parameter.\n\n<!--\nThe access token has a limited lifetime, which is indicated in the `expires_in`\nresponse attribute (given in seconds). After that time, the access token is no\nlonger valid and a new token must be issued. Of course you can also issue a new\ntoken before that time.\n-->\n\n\n",
-            "uriTemplate": "/auth/v1/token",
+            "uriTemplate": "/auth/token",
             "model": {},
             "parameters": [],
             "actions": [
@@ -1393,7 +1393,7 @@
                 ],
                 "attributes": {
                   "relation": "",
-                  "uriTemplate": "/auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}"
+                  "uriTemplate": "/auth/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}"
                 },
                 "content": [],
                 "examples": [
@@ -1446,7 +1446,7 @@
             "element": "resource",
             "name": "Get job offer",
             "description": "",
-            "uriTemplate": "/search/v1/job-offer/{id}",
+            "uriTemplate": "/search/job-offer/{id}",
             "model": {},
             "parameters": [],
             "actions": [
@@ -1467,7 +1467,7 @@
                 ],
                 "attributes": {
                   "relation": "self",
-                  "uriTemplate": "/search/v1/job-offer/{id}"
+                  "uriTemplate": "/search/job-offer/{id}"
                 },
                 "content": [],
                 "examples": [
