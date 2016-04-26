@@ -1,5 +1,12 @@
+install:
+  - true
+
+script:
+  - true
+
 before_deploy:
   - cd html
+
 deploy:
   - provider: gcs
     bucket: apidocs.classmarkets.com
