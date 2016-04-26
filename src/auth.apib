@@ -1,0 +1,124 @@
+# Group Authentication and authorization
+
+<!--
+All requests to endpoints other than the authentication endpoints must be
+authorized with access tokens.
+
+First, acquire an access token using one of the methods described below. Then
+include your token in all further requests like so:
+
+    GET /some/endpoint HTTP/1.1
+    Host: api.classmarkets.com
+    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
+
+First, issue an Access and Refresh token using the /auth/v1/token endpoint. You
+received your client id and secret when you registered for the API.
+
+
+The scope parameter will determine how powerful the access token is, e.g. what
+can be done with it. To limit the possible damage that can be done if the token
+is disclosed, you should always make the scope as narrow as possible.
+
+
+```
+POST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1
+Host: api.classmarkets.com
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Content-Length: 0
+```
+
+Assuming the client id and secret are correct, the API will issue an access
+token.
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "access_token": "UqMv7BFvQCmE84mqG7SWOw", 
+    "expires_in": 3600, 
+    "scope": "api.listings.readonly", 
+    "token_type": "Bearer"
+}
+```
+
+
+Include this token in all future requests like so:
+
+```
+GET /search/v1/job-offer/6JV76J-339533 HTTP/1.1
+Host: api.classmarkets.com
+Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+```
+-->
+
+## Access tokens [/auth/v1/token]
+
+The classmarkets API requires all requests to be authorized. Before you can
+interact with the API in a meaningful way, you have to acquire an access token.
+You will then present this access token in all following request headers, like
+so:
+
+    GET /some/endpoint HTTP/1.1
+    Host: api.classmarkets.com
+    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
+If you are familiar with OAuth 2, feel free to skip the rest of this section.
+
+The string "UqMv7BFvQCmE84mqG7SWOw" in the example above is the access token.
+To you it is just an opaque string. Keep your tokens safe! Whoever gains
+access to them can use the API on your behalf.
+
+Tokens are acquired using one of the OAuth 2 authorization methods, also known
+as grant types.
+
+To get the API to issue an access token, you will have to authenticate yourself
+(e.g. prove that you are you) and also indicate what you are planning to do
+with your access token. The details of the authentication depend on the
+`grant_type` and are detailed below. The declaration of intend is always the
+same and happens with the `scope` parameter.
+
+<!--
+The access token has a limited lifetime, which is indicated in the `expires_in`
+response attribute (given in seconds). After that time, the access token is no
+longer valid and a new token must be issued. Of course you can also issue a new
+token before that time.
+-->
+
+
+### Authenticate with client credentials [POST /auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}]
+
+While OAuth 2 specifies several authentication methods the API only supports
+the "client credentials" method. This method is suitable for applications that
+act on their own behalf, as opposed to applications that act on behalf of a
+particular (usually human) user.
+
+Authentication is based on your client id and secret, both of which you
+received when signing up for your API account.
+
++ Parameters
+    + `client_id`: `91a5bd6e-bbdc-4b4b-bc83-bd81259d6098` (string, required) -
+      client_id identifies the software interacting with the API. This id is
+      generated and communicated by classmarkets when signing up for an API
+      account.
+    + `client_secret`: `ATcc/BmVhcEp-MlpQo4M6MdPtzZ4BBE2` (string) - This
+      secret is generated and communicated by classmarkets when signing up for
+      an API account.
+    + scope: `api.listings.readonly,api.users` (string) - A comma separated
+      list of scopes for the access token. The scope determines how powerful
+      the access token is, e.g. what can be done with it. To limit the possible
+      damage that can be done if the token is disclosed, it should be as narrow
+      as possible.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "access_token": "UqMv7BFvQCmE84mqG7SWOw",
+                "expires_in": 3600,
+                "scope": "api.listings.readonly",
+                "token_type": "Bearer"
+            }

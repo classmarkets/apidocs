@@ -1,0 +1,120 @@
+## Data Structures
+
+### Job Offer Listing
+
++ id: `6JV76J-339533` (required)
++ meta (object, required)
+    + origin (object, required)
+        + url: `https://jobs.augsburger-allgemeine.de/stellenangebot/sachbearbeiter-verkaufsservice-export--6jv76j-339533` (string, required)
+    + first_saved_at: `2016-03-16T09:37:32Z` (string)
+    + last_saved_at: `2016-03-22T05:35:59Z` (string)
+    + published_at: `2016-03-16T00:00:00Z` (string)
+    + expires_at: `2038-01-19T03:14:07Z` (string)
+
++ expose_type (enum, required)
+    + premium_description
+    + image_ad
+    + external_expose
+
++ title: `Sachbearbeiter Verkaufsservice Export (m/w)` (string) - The listing's title
++ advertiser (Organization) - The organization paying for this listing
++ summary: `Bei Zott ist der Genuss zu Hause!` (string) - Aka. short description
++ description: `<p>Bei Zott ist der Genuss zu Hause!</p>` (string) - This is the listing's content
+    
+    Only relevant for listings with `expose_type == "premium_description"`. The
+    description may be formatted as HTML. No tags are stripped by classmarkets.
+
++ url: `https://www.zott-dairy.com/karreer/4987621.html` (string)
+
+    Canonical URL for this job offer. Only relevant for listings with
+    `expose_type == "external_expose"`.
+
++ embedded_image: `https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg` (string)
+
+    URL to the image depicting the job offer. Only relevant for listings with
+    `expose_type == "image_ad"`.
+
++ location (array[Location])
+
++ attachments (array)
+    + (object)
+        + caption: `Sachbearbeiter Verkaufsservice Export.pdf` (string)
+        + url: `https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg` (string, required)
+        + type: `image/jpeg` (string, required)
+
++ contact
+    + recipients (array)
+        + (object)
+            + name: `Dipl. Ing. John Doe` (string)
+            + email_addresses (array)
+                + (object)
+                    + value: `john.doe@example.com` (string, required)
+                    + label: `Bewerbungen` (string)
+            + phone_numbers (array)
+                + (object)
+                    + value: `06022 2647529` (string, required)
+                    + label: `HR` (string)
+                + (object)
+                    + value: `06022 2647530` (string, required)
+                    + label: `PR` (string)
+            + urls (array)
+                + (object)
+                    + value: `https://example.com` (string, required)
+                    + label: `Homepage` (string)
++ industries (array)
+    + (object)
+        + label: Finanzen und Recht
+    + (object)
+        + label: Sonstige
+    + (object)
+        + label: Informatik und IT
++ job_types (array)
+    + (object)
+        + label: Vollzeit
+    + (object)
+        + label: Festanstellung
++ tags: `Export`, `Sachbearbeiter/in`, `Verkaufsservice`, `Auftragsbearbeitung` (array[string])
+
+### Address
+
++ street_address: `Dr.-Steichele-Straße 4` (string) - Street name and number
++ postal_code: `86690` (string)
++ locality: `Mertingen` (string) - The general term for city, village etc.
++ country_code: `DE` (string) - as defined by ISO 3166-1-alpha-2
++ country: `Deutschland` (string) - Localized to the country's official language
++ public: `true` (boolean, required) - Indicates if it is allowed to publicly display the street_address attribute.
+
+    Specifically for addresses of real estates this will often be false, so
+    care has to be taken to not disclose sensitive information.
+
+    + Default: false
+
+### Organization
+
++ id: `66fec87e-8ff3-4c9e-8041-25a114cb1e23` (string)
++ name: `Zott SE & Co. KG` (string) - The organization's legal name
++ email_address: `karriere@zott.de` (string)
++ telephone_number: `+49 9078 801 0` (string)
++ url: `http://www.zott-dairy.com` (string)
++ address (Address)
++ logos
+    + `default`: `https://cmcdn.de/c/4be/42acb25b52643374d7d8051f18e10662a1ea3.png` (string)
+    + `small`: `https://cmcdn.de/c/1aa/8051f18e10662a1ea342acb25b52643374d7d.jpg` (string)
+
+### Location
+
++ address (Address)
++ geography (object)
+    + point (object)
+        + lat: `47.8547405` (number)
+        + lon: `13.1532173` (number)
+    + point_accuracy (enum)
+        + street
+        + citydistrict
+        + city
+        + district
+        + state
+        + country
+        + postal_code
+        + pobox
+        + usercomposed

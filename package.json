@@ -1,0 +1,8 @@
+{
+  "name": "apidocs",
+  "description": "classmarkets API docs",
+  "license": "proprietary",
+  "dependencies": {
+    "aglio-theme-olio": "^1.6.2"
+  }
+}

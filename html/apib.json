@@ -1,0 +1,1574 @@
+{
+  "_version": "2.2",
+  "ast": {
+    "_version": "4.0",
+    "metadata": [
+      {
+        "name": "FORMAT",
+        "value": "1A"
+      },
+      {
+        "name": "HOST",
+        "value": "https://api.classmarkets.com"
+      }
+    ],
+    "name": "classmarkets HTTP API",
+    "description": "This is the documentation for the public classmarkets API.\n\n## About this documentation\n\nThe classmarkets API documentation is authored in [API Blueprint][blueprint].\nThe source is [publicly available on GitHub][github].  The canonical version is\nthe HTML rendering at [http://apidocs.classmarkets.com/][canonical].\n\nIt is also published to [Apiary][apiary]. Apiary offers example requests in\nseveral programming languages, a mock server that can be used to build client\nprototypes, as well as a console that demonstrates the API in the browser.\n\nFor consumption by machines we also provide the [Blueprint AST in JSON][ast].\n\n<!--\nas well as automatically built [RAML][raml] and [Swagger][swagger] definitions.\nPlease note that classmarkets is not using the RAML and Swagger definitions and\ncan not guarantee their completeness nor correctness. Specifically, both\nformats support only one example transaction per endpoint.\n-->\n\n[blueprint]: https://apiblueprint.org/\n[github]: https://github.com/classmarkets/apidocs\n[canonical]: http://apidocs.classmarkets.com/\n[apiary]: http://docs.classmarkets.apiary.io/\n[ast]: http://apidocs.classmarkets.com/apib.json\n[raml]:  api.raml\n[swagger]: swagger.yaml\n\n## General concepts\n\nUnless otherwise noted in the documentation for a specific endpoint, the\nfollowing concepts apply.\n\nThe API transport is JSON over HTTPS. Responses will indicate a Content-Type of\n\"application/json\". Requests with a JSON body preferrably have a Content-Type\nof \"application/json\" in the header as well, or no Content-Type at all. It is\nan error to send e. g. \"text/plain\" in the header of a JSON request body. We\nstrongly recommend to indicate the Content-Type explicitly to guarantee forward\ncompatibility.\n\nRequests are authenticated using OAuth2 access tokens. This is described in\ndetail below.\n\nDates and times are represented in a format specified by [RFC 3339][rfc3339],\nsuch as `2016-04-24T11:29:07.612797822Z`. The precision for fractional seconds\nmay vary but will not exceed nanoseconds. Times are given in UTC. Named\ntimezones, such as \"GMT\", \"CET\" are not supported, because [they are\nambiguous][timezones].\n\n[rfc3339]: http://tools.ietf.org/html/rfc3339\n[timezones]: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations\n\n## A word on data sanity\n\nclassmarkets ingests data from generally untrustworthy sources. The API does\nnot attempt to sanitize this data, because what sanitization means depends on\nthe context this data is used in. This means that per se you cannot trust any\ndata you receive from the API, especially from the listings endpoints.\n\nThis is not a hypothetical situation. There *are* \"email addresses\" like `';\nDROP TABLE users; --`. There *are* listing descriptions containing malformed\nHTML and potentially malicious JavaScript. It is the client's responsibility to\nsanitize and/or escape properly.\n\n## Backwards compatibility\n\nWith the following exceptions, every change to the API is considered to break\nbackwards compatibility and will result in a new version for affected\nendpoints. Changes we do not consider to break compatibility and may be\nintroduced without prior notice are:\n\n* Adding a new attribute to a resource, be it at the top level or to any nested\n  attribute.\n\n* Adding a new value to an enumeration, be it an attribute or a request\n  parameter.\n\n* Removing a value from an enumeration, be it an attribute or a request\n  parameter, if and only if the API can assume a sensible default behaviour\n  when receiving this value in the future.\n\n* Adding a new, optional request parameter.\n\n* Adding a new endpoint.\n\n<!-- TODO: mailing list for communicating changes? What about BC breaks that are required due to security issues? -->\n\n",
+    "element": "category",
+    "resourceGroups": [
+      {
+        "name": "Authentication and authorization",
+        "description": "<!--\nAll requests to endpoints other than the authentication endpoints must be\nauthorized with access tokens.\n\nFirst, acquire an access token using one of the methods described below. Then\ninclude your token in all further requests like so:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\n\nFirst, issue an Access and Refresh token using the /auth/v1/token endpoint. You\nreceived your client id and secret when you registered for the API.\n\n\nThe scope parameter will determine how powerful the access token is, e.g. what\ncan be done with it. To limit the possible damage that can be done if the token\nis disclosed, you should always make the scope as narrow as possible.\n\n\n```\nPOST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1\nHost: api.classmarkets.com\nAccept: application/json\nAccept-Encoding: gzip, deflate\nContent-Length: 0\n```\n\nAssuming the client id and secret are correct, the API will issue an access\ntoken.\n\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\", \n    \"expires_in\": 3600, \n    \"scope\": \"api.listings.readonly\", \n    \"token_type\": \"Bearer\"\n}\n```\n\n\nInclude this token in all future requests like so:\n\n```\nGET /search/v1/job-offer/6JV76J-339533 HTTP/1.1\nHost: api.classmarkets.com\nAuthorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n```\n-->\n\n",
+        "resources": [
+          {
+            "element": "resource",
+            "name": "Access tokens",
+            "description": "The classmarkets API requires all requests to be authorized. Before you can\ninteract with the API in a meaningful way, you have to acquire an access token.\nYou will then present this access token in all following request headers, like\nso:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\nIf you are familiar with OAuth 2, feel free to skip the rest of this section.\n\nThe string \"UqMv7BFvQCmE84mqG7SWOw\" in the example above is the access token.\nTo you it is just an opaque string. Keep your tokens safe! Whoever gains\naccess to them can use the API on your behalf.\n\nTokens are acquired using one of the OAuth 2 authorization methods, also known\nas grant types.\n\nTo get the API to issue an access token, you will have to authenticate yourself\n(e.g. prove that you are you) and also indicate what you are planning to do\nwith your access token. The details of the authentication depend on the\n`grant_type` and are detailed below. The declaration of intend is always the\nsame and happens with the `scope` parameter.\n\n<!--\nThe access token has a limited lifetime, which is indicated in the `expires_in`\nresponse attribute (given in seconds). After that time, the access token is no\nlonger valid and a new token must be issued. Of course you can also issue a new\ntoken before that time.\n-->\n\n\n",
+            "uriTemplate": "/auth/v1/token",
+            "model": {},
+            "parameters": [],
+            "actions": [
+              {
+                "name": "Authenticate with client credentials",
+                "description": "While OAuth 2 specifies several authentication methods the API only supports\nthe \"client credentials\" method. This method is suitable for applications that\nact on their own behalf, as opposed to applications that act on behalf of a\nparticular (usually human) user.\n\nAuthentication is based on your client id and secret, both of which you\nreceived when signing up for your API account.\n\n",
+                "method": "POST",
+                "parameters": [
+                  {
+                    "name": "client_id",
+                    "description": "\nclient_id identifies the software interacting with the API. This id is\ngenerated and communicated by classmarkets when signing up for an API\naccount.\n\n",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "91a5bd6e-bbdc-4b4b-bc83-bd81259d6098",
+                    "values": []
+                  },
+                  {
+                    "name": "client_secret",
+                    "description": "This\nsecret is generated and communicated by classmarkets when signing up for\nan API account.\n\n",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "ATcc/BmVhcEp-MlpQo4M6MdPtzZ4BBE2",
+                    "values": []
+                  },
+                  {
+                    "name": "scope",
+                    "description": "A comma separated\nlist of scopes for the access token. The scope determines how powerful\nthe access token is, e.g. what can be done with it. To limit the possible\ndamage that can be done if the token is disclosed, it should be as narrow\nas possible.\n\n",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "api.listings.readonly,api.users",
+                    "values": []
+                  }
+                ],
+                "attributes": {
+                  "relation": "",
+                  "uriTemplate": "/auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}"
+                },
+                "content": [],
+                "examples": [
+                  {
+                    "name": "",
+                    "description": "",
+                    "requests": [],
+                    "responses": [
+                      {
+                        "name": "200",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": "{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\",\n    \"expires_in\": 3600,\n    \"scope\": \"api.listings.readonly\",\n    \"token_type\": \"Bearer\"\n}\n",
+                        "schema": "",
+                        "content": [
+                          {
+                            "element": "asset",
+                            "attributes": {
+                              "role": "bodyExample"
+                            },
+                            "content": "{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\",\n    \"expires_in\": 3600,\n    \"scope\": \"api.listings.readonly\",\n    \"token_type\": \"Bearer\"\n}\n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "content": []
+          }
+        ]
+      },
+      {
+        "name": "Listings",
+        "description": "Endpoints for retrieving listings, aka adverts, such as real estate offers, job offers.\n\nDonec aliquam ac odio quis consequat. Nullam volutpat mauris a gravida\ninterdum. Ut nec porta nisi. Aenean in libero nisi. Phasellus ut nibh facilisis\npurus laoreet suscipit. Proin ut accumsan ipsum, in condimentum ante.\nPellentesque habitant morbi tristique senectus et netus et malesuada fames ac\nturpis egestas. Suspendisse finibus ex nisi. In accumsan venenatis elit. In hac\nhabitasse platea dictumst. Proin commodo ante tellus. Donec ante mi, egestas\neget felis id, sagittis imperdiet dolor. Duis aliquam mauris sed fringilla\npharetra.\n\n",
+        "resources": [
+          {
+            "element": "resource",
+            "name": "Get job offer",
+            "description": "",
+            "uriTemplate": "/search/v1/job-offer/{id}",
+            "model": {},
+            "parameters": [],
+            "actions": [
+              {
+                "name": "Get job offer",
+                "description": "Retrieve single job offer listings by id.\n\n",
+                "method": "GET",
+                "parameters": [
+                  {
+                    "name": "id",
+                    "description": "The listing's \"id\" attribute",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "6JV76J-339533",
+                    "values": []
+                  }
+                ],
+                "attributes": {
+                  "relation": "self",
+                  "uriTemplate": "/search/v1/job-offer/{id}"
+                },
+                "content": [],
+                "examples": [
+                  {
+                    "name": "",
+                    "description": "",
+                    "requests": [
+                      {
+                        "name": "Retrieve Text Listing",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Authorization",
+                            "value": "Bearer UqMv7BFvQCmE84mqG7SWOw"
+                          }
+                        ],
+                        "body": "",
+                        "schema": "",
+                        "content": []
+                      }
+                    ],
+                    "responses": [
+                      {
+                        "name": "200",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": "{\n  \"id\": \"6JV76J-339533\",\n  \"meta\": {\n    \"origin\": {\n      \"url\": \"https://jobs.augsburger-allgemeine.de/stellenangebot/sachbearbeiter-verkaufsservice-export--6jv76j-339533\"\n    },\n    \"first_saved_at\": \"2016-03-16T09:37:32Z\",\n    \"last_saved_at\": \"2016-03-22T05:35:59Z\",\n    \"published_at\": \"2016-03-16T00:00:00Z\",\n    \"expires_at\": \"2038-01-19T03:14:07Z\"\n  },\n  \"expose_type\": \"premium_description\",\n  \"title\": \"Sachbearbeiter Verkaufsservice Export (m/w)\",\n  \"advertiser\": {\n    \"id\": \"66fec87e-8ff3-4c9e-8041-25a114cb1e23\",\n    \"name\": \"Zott SE & Co. KG\",\n    \"email_address\": \"karriere@zott.de\",\n    \"telephone_number\": \"+49 9078 801 0\",\n    \"url\": \"http://www.zott-dairy.com\",\n    \"address\": {\n      \"street_address\": \"Dr.-Steichele-Straße 4\",\n      \"postal_code\": \"86690\",\n      \"locality\": \"Mertingen\",\n      \"country_code\": \"DE\",\n      \"country\": \"Deutschland\",\n      \"public\": true\n    },\n    \"logos\": {\n      \"default\": \"https://cmcdn.de/c/4be/42acb25b52643374d7d8051f18e10662a1ea3.png\",\n      \"small\": \"https://cmcdn.de/c/1aa/8051f18e10662a1ea342acb25b52643374d7d.jpg\"\n    }\n  },\n  \"summary\": \"Bei Zott ist der Genuss zu Hause!\",\n  \"description\": \"<p>Bei Zott ist der Genuss zu Hause!</p>\",\n  \"url\": \"https://www.zott-dairy.com/karreer/4987621.html\",\n  \"embedded_image\": \"https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg\",\n  \"location\": [\n    {\n      \"address\": {\n        \"street_address\": \"Dr.-Steichele-Straße 4\",\n        \"postal_code\": \"86690\",\n        \"locality\": \"Mertingen\",\n        \"country_code\": \"DE\",\n        \"country\": \"Deutschland\",\n        \"public\": true\n      },\n      \"geography\": {\n        \"point\": {\n          \"lat\": 47.85474,\n          \"lon\": 13.153217\n        },\n        \"point_accuracy\": \"street\"\n      }\n    }\n  ],\n  \"attachments\": [\n    {\n      \"caption\": \"Sachbearbeiter Verkaufsservice Export.pdf\",\n      \"url\": \"https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg\",\n      \"type\": \"image/jpeg\"\n    }\n  ],\n  \"contact\": {\n    \"recipients\": [\n      {\n        \"name\": \"Dipl. Ing. John Doe\",\n        \"email_addresses\": [\n          {\n            \"value\": \"john.doe@example.com\",\n            \"label\": \"Bewerbungen\"\n          }\n        ],\n        \"phone_numbers\": [\n          {\n            \"value\": \"06022 2647529\",\n            \"label\": \"HR\"\n          },\n          {\n            \"value\": \"06022 2647530\",\n            \"label\": \"PR\"\n          }\n        ],\n        \"urls\": [\n          {\n            \"value\": \"https://example.com\",\n            \"label\": \"Homepage\"\n          }\n        ]\n      }\n    ]\n  },\n  \"industries\": [\n    {\n      \"label\": \"Finanzen und Recht\"\n    },\n    {\n      \"label\": \"Sonstige\"\n    },\n    {\n      \"label\": \"Informatik und IT\"\n    }\n  ],\n  \"job_types\": [\n    {\n      \"label\": \"Vollzeit\"\n    },\n    {\n      \"label\": \"Festanstellung\"\n    }\n  ],\n  \"tags\": [\n    \"Export\",\n    \"Sachbearbeiter/in\",\n    \"Verkaufsservice\",\n    \"Auftragsbearbeitung\"\n  ]\n}",
+                        "schema": "{\n  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"id\": {\n      \"type\": \"string\"\n    },\n    \"meta\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"origin\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"url\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"url\"\n          ]\n        },\n        \"first_saved_at\": {\n          \"type\": \"string\"\n        },\n        \"last_saved_at\": {\n          \"type\": \"string\"\n        },\n        \"published_at\": {\n          \"type\": \"string\"\n        },\n        \"expires_at\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"origin\"\n      ]\n    },\n    \"expose_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"premium_description\",\n        \"image_ad\",\n        \"external_expose\"\n      ]\n    },\n    \"title\": {\n      \"type\": \"string\",\n      \"description\": \"The listing's title\"\n    },\n    \"advertiser\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"string\"\n        },\n        \"name\": {\n          \"type\": \"string\",\n          \"description\": \"The organization's legal name\"\n        },\n        \"email_address\": {\n          \"type\": \"string\"\n        },\n        \"telephone_number\": {\n          \"type\": \"string\"\n        },\n        \"url\": {\n          \"type\": \"string\"\n        },\n        \"address\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"street_address\": {\n              \"type\": \"string\",\n              \"description\": \"Street name and number\"\n            },\n            \"postal_code\": {\n              \"type\": \"string\"\n            },\n            \"locality\": {\n              \"type\": \"string\",\n              \"description\": \"The general term for city, village etc.\"\n            },\n            \"country_code\": {\n              \"type\": \"string\",\n              \"description\": \"as defined by ISO 3166-1-alpha-2\"\n            },\n            \"country\": {\n              \"type\": \"string\",\n              \"description\": \"Localized to the country's official language\"\n            },\n            \"public\": {\n              \"type\": \"boolean\",\n              \"description\": \"Indicates if it is allowed to publicly display the street_address attribute.\\n\\nSpecifically for addresses of real estates this will often be false, so\\ncare has to be taken to not disclose sensitive information.\\n\"\n            }\n          },\n          \"required\": [\n            \"public\"\n          ]\n        },\n        \"logos\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"default\": {\n              \"type\": \"string\"\n            },\n            \"small\": {\n              \"type\": \"string\"\n            }\n          }\n        }\n      },\n      \"description\": \"The organization paying for this listing\"\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"Aka. short description\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"description\": \"This is the listing's content\\n\\nOnly relevant for listings with `expose_type == \\\"premium_description\\\"`. The\\ndescription may be formatted as HTML. No tags are stripped by classmarkets.\\n\"\n    },\n    \"url\": {\n      \"type\": \"string\",\n      \"description\": \"Canonical URL for this job offer. Only relevant for listings with\\n`expose_type == \\\"external_expose\\\"`.\\n\"\n    },\n    \"embedded_image\": {\n      \"type\": \"string\",\n      \"description\": \"URL to the image depicting the job offer. Only relevant for listings with\\n`expose_type == \\\"image_ad\\\"`.\\n\"\n    },\n    \"location\": {\n      \"type\": \"array\"\n    },\n    \"attachments\": {\n      \"type\": \"array\"\n    },\n    \"contact\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"recipients\": {\n          \"type\": \"array\"\n        }\n      }\n    },\n    \"industries\": {\n      \"type\": \"array\"\n    },\n    \"job_types\": {\n      \"type\": \"array\"\n    },\n    \"tags\": {\n      \"type\": \"array\"\n    }\n  },\n  \"required\": [\n    \"id\",\n    \"meta\",\n    \"expose_type\"\n  ]\n}",
+                        "content": [
+                          {
+                            "element": "dataStructure",
+                            "content": [
+                              {
+                                "element": "Job Offer Listing"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "",
+                    "description": "",
+                    "requests": [
+                      {
+                        "name": "Retrieve Image Listing",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Authorization",
+                            "value": "Bearer UqMv7BFvQCmE84mqG7SWOw"
+                          }
+                        ],
+                        "body": "",
+                        "schema": "",
+                        "content": []
+                      }
+                    ],
+                    "responses": [
+                      {
+                        "name": "200",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": "{\n    \"id\": \"6JYRCC-338615\",\n    \"expose_type\": \"image_ad\",\n    \"title\": \"Konstrukteur/in für Maschinenbau\",\n    \"summary\": \"Zur Verstärkung unseres Teams suchen wir zum sofortigen Eintritt eine/n\\nKonstrukteur/in für Maschinenbau\",\n    \"embedded_image\": \"https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg\",\n    \"advertiser\": {\n        \"id\": \"2915924\",\n        \"name\": \"MBU Maschinenbau GmbH.\",\n        \"logos\": {\n            \"small\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\",\n            \"default\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\"\n        }\n    },\n    \"contact\": {\n    \"recipients\": [\n            {\n                \"name\": \"Ing. Andreas Angerer\",\n                \"email_addresses\": [\n                    { \"value\": \"angerer@mbu.at\" }\n                ]\n            }\n        ]\n    },\n    \"industries\": [\n        { \"label\": \"Maschinenbau\" },\n        { \"label\": \"Elektronik\" },\n        { \"label\": \"Technik\" }\n    ],\n    \"job_types\": [\n        { \"label\": \"vollzeit\" },\n        { \"label\": \"teilzeit\" }\n    ],\n    \"tags\": [\n        \"HTL\",\n        \"Maschinen\",\n        \"Bau\",\n        \"Maschinenbau\",\n        \"Konstrukteur\",\n        \"Konstruktion\",\n        \"Montage\",\n        \"Mechatronik\"\n    ],\n    \"location\": [{\n        \"address\": {\n            \"public\": true,\n            \"postal_code\": \"5301\",\n            \"locality\": \"Eugendorf\",\n            \"country\": \"AT\"\n        },\n        \"geography\": {\n            \"point\": {\n                \"lat\": \"47.8547405\",\n                \"lon\": \"13.1532173731117\"\n            },\n            \"point_accuracy\": \"postal_code\"\n        }\n    }],\n    \"attachments\": [{\n        \"caption\": \"Softwareentwicklerin für Großdieselmotorsteuergeräte.pdf\",\n        \"url\": \"https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg\",\n        \"type\": \"image/jpeg\"\n    }],\n    \"meta\": {\n        \"first_saved_at\": \"2016-03-18T07:03:51Z\",\n        \"last_saved_at\": \"2016-03-22T07:03:33Z\",\n        \"published_at\": \"2016-03-18T00:00:00Z\",\n        \"expires_at\": \"2038-01-19T03:14:07Z\",\n        \"origin\": {\"url\": \"https://beste-stellen.salzburg.com/stellenangebot/konstrukteur-in-fuer-maschinenbau--6JYRCC-338615\"}\n    }\n}\n",
+                        "schema": "",
+                        "content": [
+                          {
+                            "element": "asset",
+                            "attributes": {
+                              "role": "bodyExample"
+                            },
+                            "content": "{\n    \"id\": \"6JYRCC-338615\",\n    \"expose_type\": \"image_ad\",\n    \"title\": \"Konstrukteur/in für Maschinenbau\",\n    \"summary\": \"Zur Verstärkung unseres Teams suchen wir zum sofortigen Eintritt eine/n\\nKonstrukteur/in für Maschinenbau\",\n    \"embedded_image\": \"https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg\",\n    \"advertiser\": {\n        \"id\": \"2915924\",\n        \"name\": \"MBU Maschinenbau GmbH.\",\n        \"logos\": {\n            \"small\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\",\n            \"default\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\"\n        }\n    },\n    \"contact\": {\n    \"recipients\": [\n            {\n                \"name\": \"Ing. Andreas Angerer\",\n                \"email_addresses\": [\n                    { \"value\": \"angerer@mbu.at\" }\n                ]\n            }\n        ]\n    },\n    \"industries\": [\n        { \"label\": \"Maschinenbau\" },\n        { \"label\": \"Elektronik\" },\n        { \"label\": \"Technik\" }\n    ],\n    \"job_types\": [\n        { \"label\": \"vollzeit\" },\n        { \"label\": \"teilzeit\" }\n    ],\n    \"tags\": [\n        \"HTL\",\n        \"Maschinen\",\n        \"Bau\",\n        \"Maschinenbau\",\n        \"Konstrukteur\",\n        \"Konstruktion\",\n        \"Montage\",\n        \"Mechatronik\"\n    ],\n    \"location\": [{\n        \"address\": {\n            \"public\": true,\n            \"postal_code\": \"5301\",\n            \"locality\": \"Eugendorf\",\n            \"country\": \"AT\"\n        },\n        \"geography\": {\n            \"point\": {\n                \"lat\": \"47.8547405\",\n                \"lon\": \"13.1532173731117\"\n            },\n            \"point_accuracy\": \"postal_code\"\n        }\n    }],\n    \"attachments\": [{\n        \"caption\": \"Softwareentwicklerin für Großdieselmotorsteuergeräte.pdf\",\n        \"url\": \"https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg\",\n        \"type\": \"image/jpeg\"\n    }],\n    \"meta\": {\n        \"first_saved_at\": \"2016-03-18T07:03:51Z\",\n        \"last_saved_at\": \"2016-03-22T07:03:33Z\",\n        \"published_at\": \"2016-03-18T00:00:00Z\",\n        \"expires_at\": \"2038-01-19T03:14:07Z\",\n        \"origin\": {\"url\": \"https://beste-stellen.salzburg.com/stellenangebot/konstrukteur-in-fuer-maschinenbau--6JYRCC-338615\"}\n    }\n}\n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "content": []
+          }
+        ]
+      }
+    ],
+    "content": [
+      {
+        "element": "category",
+        "content": [
+          {
+            "element": "dataStructure",
+            "content": [
+              {
+                "element": "object",
+                "meta": {
+                  "id": "Job Offer Listing"
+                },
+                "content": [
+                  {
+                    "element": "member",
+                    "attributes": {
+                      "typeAttributes": [
+                        "required"
+                      ]
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "id"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "6JV76J-339533"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "attributes": {
+                      "typeAttributes": [
+                        "required"
+                      ]
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "meta"
+                      },
+                      "value": {
+                        "element": "object",
+                        "content": [
+                          {
+                            "element": "member",
+                            "attributes": {
+                              "typeAttributes": [
+                                "required"
+                              ]
+                            },
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "origin"
+                              },
+                              "value": {
+                                "element": "object",
+                                "content": [
+                                  {
+                                    "element": "member",
+                                    "attributes": {
+                                      "typeAttributes": [
+                                        "required"
+                                      ]
+                                    },
+                                    "content": {
+                                      "key": {
+                                        "element": "string",
+                                        "content": "url"
+                                      },
+                                      "value": {
+                                        "element": "string",
+                                        "content": "https://jobs.augsburger-allgemeine.de/stellenangebot/sachbearbeiter-verkaufsservice-export--6jv76j-339533"
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "first_saved_at"
+                              },
+                              "value": {
+                                "element": "string",
+                                "content": "2016-03-16T09:37:32Z"
+                              }
+                            }
+                          },
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "last_saved_at"
+                              },
+                              "value": {
+                                "element": "string",
+                                "content": "2016-03-22T05:35:59Z"
+                              }
+                            }
+                          },
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "published_at"
+                              },
+                              "value": {
+                                "element": "string",
+                                "content": "2016-03-16T00:00:00Z"
+                              }
+                            }
+                          },
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "expires_at"
+                              },
+                              "value": {
+                                "element": "string",
+                                "content": "2038-01-19T03:14:07Z"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "attributes": {
+                      "typeAttributes": [
+                        "required"
+                      ]
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "expose_type"
+                      },
+                      "value": {
+                        "element": "enum",
+                        "content": [
+                          {
+                            "element": "string",
+                            "content": "premium_description"
+                          },
+                          {
+                            "element": "string",
+                            "content": "image_ad"
+                          },
+                          {
+                            "element": "string",
+                            "content": "external_expose"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "The listing's title"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "title"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "Sachbearbeiter Verkaufsservice Export (m/w)"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "The organization paying for this listing"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "advertiser"
+                      },
+                      "value": {
+                        "element": "Organization"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "Aka. short description"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "summary"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "Bei Zott ist der Genuss zu Hause!"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "This is the listing's content\n\nOnly relevant for listings with `expose_type == \"premium_description\"`. The\ndescription may be formatted as HTML. No tags are stripped by classmarkets.\n"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "description"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "<p>Bei Zott ist der Genuss zu Hause!</p>"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "Canonical URL for this job offer. Only relevant for listings with\n`expose_type == \"external_expose\"`.\n"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "url"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "https://www.zott-dairy.com/karreer/4987621.html"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "URL to the image depicting the job offer. Only relevant for listings with\n`expose_type == \"image_ad\"`.\n"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "embedded_image"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "location"
+                      },
+                      "value": {
+                        "element": "array",
+                        "content": [
+                          {
+                            "element": "Location"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "attachments"
+                      },
+                      "value": {
+                        "element": "array",
+                        "content": [
+                          {
+                            "element": "object",
+                            "content": [
+                              {
+                                "element": "member",
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "caption"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "Sachbearbeiter Verkaufsservice Export.pdf"
+                                  }
+                                }
+                              },
+                              {
+                                "element": "member",
+                                "attributes": {
+                                  "typeAttributes": [
+                                    "required"
+                                  ]
+                                },
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "url"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg"
+                                  }
+                                }
+                              },
+                              {
+                                "element": "member",
+                                "attributes": {
+                                  "typeAttributes": [
+                                    "required"
+                                  ]
+                                },
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "type"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "image/jpeg"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "contact"
+                      },
+                      "value": {
+                        "element": "object",
+                        "content": [
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "recipients"
+                              },
+                              "value": {
+                                "element": "array",
+                                "content": [
+                                  {
+                                    "element": "object",
+                                    "content": [
+                                      {
+                                        "element": "member",
+                                        "content": {
+                                          "key": {
+                                            "element": "string",
+                                            "content": "name"
+                                          },
+                                          "value": {
+                                            "element": "string",
+                                            "content": "Dipl. Ing. John Doe"
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "element": "member",
+                                        "content": {
+                                          "key": {
+                                            "element": "string",
+                                            "content": "email_addresses"
+                                          },
+                                          "value": {
+                                            "element": "array",
+                                            "content": [
+                                              {
+                                                "element": "object",
+                                                "content": [
+                                                  {
+                                                    "element": "member",
+                                                    "attributes": {
+                                                      "typeAttributes": [
+                                                        "required"
+                                                      ]
+                                                    },
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "value"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "john.doe@example.com"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "element": "member",
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "label"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "Bewerbungen"
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "element": "member",
+                                        "content": {
+                                          "key": {
+                                            "element": "string",
+                                            "content": "phone_numbers"
+                                          },
+                                          "value": {
+                                            "element": "array",
+                                            "content": [
+                                              {
+                                                "element": "object",
+                                                "content": [
+                                                  {
+                                                    "element": "member",
+                                                    "attributes": {
+                                                      "typeAttributes": [
+                                                        "required"
+                                                      ]
+                                                    },
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "value"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "06022 2647529"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "element": "member",
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "label"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "HR"
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              },
+                                              {
+                                                "element": "object",
+                                                "content": [
+                                                  {
+                                                    "element": "member",
+                                                    "attributes": {
+                                                      "typeAttributes": [
+                                                        "required"
+                                                      ]
+                                                    },
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "value"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "06022 2647530"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "element": "member",
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "label"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "PR"
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      },
+                                      {
+                                        "element": "member",
+                                        "content": {
+                                          "key": {
+                                            "element": "string",
+                                            "content": "urls"
+                                          },
+                                          "value": {
+                                            "element": "array",
+                                            "content": [
+                                              {
+                                                "element": "object",
+                                                "content": [
+                                                  {
+                                                    "element": "member",
+                                                    "attributes": {
+                                                      "typeAttributes": [
+                                                        "required"
+                                                      ]
+                                                    },
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "value"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "https://example.com"
+                                                      }
+                                                    }
+                                                  },
+                                                  {
+                                                    "element": "member",
+                                                    "content": {
+                                                      "key": {
+                                                        "element": "string",
+                                                        "content": "label"
+                                                      },
+                                                      "value": {
+                                                        "element": "string",
+                                                        "content": "Homepage"
+                                                      }
+                                                    }
+                                                  }
+                                                ]
+                                              }
+                                            ]
+                                          }
+                                        }
+                                      }
+                                    ]
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "industries"
+                      },
+                      "value": {
+                        "element": "array",
+                        "content": [
+                          {
+                            "element": "object",
+                            "content": [
+                              {
+                                "element": "member",
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "label"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "Finanzen und Recht"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "element": "object",
+                            "content": [
+                              {
+                                "element": "member",
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "label"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "Sonstige"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "element": "object",
+                            "content": [
+                              {
+                                "element": "member",
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "label"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "Informatik und IT"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "job_types"
+                      },
+                      "value": {
+                        "element": "array",
+                        "content": [
+                          {
+                            "element": "object",
+                            "content": [
+                              {
+                                "element": "member",
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "label"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "Vollzeit"
+                                  }
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "element": "object",
+                            "content": [
+                              {
+                                "element": "member",
+                                "content": {
+                                  "key": {
+                                    "element": "string",
+                                    "content": "label"
+                                  },
+                                  "value": {
+                                    "element": "string",
+                                    "content": "Festanstellung"
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "tags"
+                      },
+                      "value": {
+                        "element": "array",
+                        "content": [
+                          {
+                            "element": "string",
+                            "content": "Export"
+                          },
+                          {
+                            "element": "string",
+                            "content": "Sachbearbeiter/in"
+                          },
+                          {
+                            "element": "string",
+                            "content": "Verkaufsservice"
+                          },
+                          {
+                            "element": "string",
+                            "content": "Auftragsbearbeitung"
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "element": "dataStructure",
+            "content": [
+              {
+                "element": "object",
+                "meta": {
+                  "id": "Address"
+                },
+                "content": [
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "Street name and number"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "street_address"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "Dr.-Steichele-Straße 4"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "postal_code"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "86690"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "The general term for city, village etc."
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "locality"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "Mertingen"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "as defined by ISO 3166-1-alpha-2"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "country_code"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "DE"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "Localized to the country's official language"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "country"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "Deutschland"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "Indicates if it is allowed to publicly display the street_address attribute.\n\nSpecifically for addresses of real estates this will often be false, so\ncare has to be taken to not disclose sensitive information.\n"
+                    },
+                    "attributes": {
+                      "typeAttributes": [
+                        "required"
+                      ]
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "public"
+                      },
+                      "value": {
+                        "element": "boolean",
+                        "attributes": {
+                          "default": false
+                        },
+                        "content": true
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "element": "dataStructure",
+            "content": [
+              {
+                "element": "object",
+                "meta": {
+                  "id": "Organization"
+                },
+                "content": [
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "id"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "66fec87e-8ff3-4c9e-8041-25a114cb1e23"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "meta": {
+                      "description": "The organization's legal name"
+                    },
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "name"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "Zott SE & Co. KG"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "email_address"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "karriere@zott.de"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "telephone_number"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "+49 9078 801 0"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "url"
+                      },
+                      "value": {
+                        "element": "string",
+                        "content": "http://www.zott-dairy.com"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "address"
+                      },
+                      "value": {
+                        "element": "Address"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "logos"
+                      },
+                      "value": {
+                        "element": "object",
+                        "content": [
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "default"
+                              },
+                              "value": {
+                                "element": "string",
+                                "content": "https://cmcdn.de/c/4be/42acb25b52643374d7d8051f18e10662a1ea3.png"
+                              }
+                            }
+                          },
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "small"
+                              },
+                              "value": {
+                                "element": "string",
+                                "content": "https://cmcdn.de/c/1aa/8051f18e10662a1ea342acb25b52643374d7d.jpg"
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "element": "dataStructure",
+            "content": [
+              {
+                "element": "object",
+                "meta": {
+                  "id": "Location"
+                },
+                "content": [
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "address"
+                      },
+                      "value": {
+                        "element": "Address"
+                      }
+                    }
+                  },
+                  {
+                    "element": "member",
+                    "content": {
+                      "key": {
+                        "element": "string",
+                        "content": "geography"
+                      },
+                      "value": {
+                        "element": "object",
+                        "content": [
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "point"
+                              },
+                              "value": {
+                                "element": "object",
+                                "content": [
+                                  {
+                                    "element": "member",
+                                    "content": {
+                                      "key": {
+                                        "element": "string",
+                                        "content": "lat"
+                                      },
+                                      "value": {
+                                        "element": "number",
+                                        "content": 47.85474
+                                      }
+                                    }
+                                  },
+                                  {
+                                    "element": "member",
+                                    "content": {
+                                      "key": {
+                                        "element": "string",
+                                        "content": "lon"
+                                      },
+                                      "value": {
+                                        "element": "number",
+                                        "content": 13.153217
+                                      }
+                                    }
+                                  }
+                                ]
+                              }
+                            }
+                          },
+                          {
+                            "element": "member",
+                            "content": {
+                              "key": {
+                                "element": "string",
+                                "content": "point_accuracy"
+                              },
+                              "value": {
+                                "element": "enum",
+                                "content": [
+                                  {
+                                    "element": "string",
+                                    "content": "street"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "citydistrict"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "city"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "district"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "state"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "country"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "postal_code"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "pobox"
+                                  },
+                                  {
+                                    "element": "string",
+                                    "content": "usercomposed"
+                                  }
+                                ]
+                              }
+                            }
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "element": "category",
+        "attributes": {
+          "name": "Authentication and authorization"
+        },
+        "content": [
+          {
+            "element": "copy",
+            "content": "<!--\nAll requests to endpoints other than the authentication endpoints must be\nauthorized with access tokens.\n\nFirst, acquire an access token using one of the methods described below. Then\ninclude your token in all further requests like so:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\n\nFirst, issue an Access and Refresh token using the /auth/v1/token endpoint. You\nreceived your client id and secret when you registered for the API.\n\n\nThe scope parameter will determine how powerful the access token is, e.g. what\ncan be done with it. To limit the possible damage that can be done if the token\nis disclosed, you should always make the scope as narrow as possible.\n\n\n```\nPOST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1\nHost: api.classmarkets.com\nAccept: application/json\nAccept-Encoding: gzip, deflate\nContent-Length: 0\n```\n\nAssuming the client id and secret are correct, the API will issue an access\ntoken.\n\n```\nHTTP/1.1 200 OK\nContent-Type: application/json\n\n{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\", \n    \"expires_in\": 3600, \n    \"scope\": \"api.listings.readonly\", \n    \"token_type\": \"Bearer\"\n}\n```\n\n\nInclude this token in all future requests like so:\n\n```\nGET /search/v1/job-offer/6JV76J-339533 HTTP/1.1\nHost: api.classmarkets.com\nAuthorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n```\n-->\n\n"
+          },
+          {
+            "element": "resource",
+            "name": "Access tokens",
+            "description": "The classmarkets API requires all requests to be authorized. Before you can\ninteract with the API in a meaningful way, you have to acquire an access token.\nYou will then present this access token in all following request headers, like\nso:\n\n    GET /some/endpoint HTTP/1.1\n    Host: api.classmarkets.com\n    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw\n\nIf you are familiar with OAuth 2, feel free to skip the rest of this section.\n\nThe string \"UqMv7BFvQCmE84mqG7SWOw\" in the example above is the access token.\nTo you it is just an opaque string. Keep your tokens safe! Whoever gains\naccess to them can use the API on your behalf.\n\nTokens are acquired using one of the OAuth 2 authorization methods, also known\nas grant types.\n\nTo get the API to issue an access token, you will have to authenticate yourself\n(e.g. prove that you are you) and also indicate what you are planning to do\nwith your access token. The details of the authentication depend on the\n`grant_type` and are detailed below. The declaration of intend is always the\nsame and happens with the `scope` parameter.\n\n<!--\nThe access token has a limited lifetime, which is indicated in the `expires_in`\nresponse attribute (given in seconds). After that time, the access token is no\nlonger valid and a new token must be issued. Of course you can also issue a new\ntoken before that time.\n-->\n\n\n",
+            "uriTemplate": "/auth/v1/token",
+            "model": {},
+            "parameters": [],
+            "actions": [
+              {
+                "name": "Authenticate with client credentials",
+                "description": "While OAuth 2 specifies several authentication methods the API only supports\nthe \"client credentials\" method. This method is suitable for applications that\nact on their own behalf, as opposed to applications that act on behalf of a\nparticular (usually human) user.\n\nAuthentication is based on your client id and secret, both of which you\nreceived when signing up for your API account.\n\n",
+                "method": "POST",
+                "parameters": [
+                  {
+                    "name": "client_id",
+                    "description": "\nclient_id identifies the software interacting with the API. This id is\ngenerated and communicated by classmarkets when signing up for an API\naccount.\n\n",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "91a5bd6e-bbdc-4b4b-bc83-bd81259d6098",
+                    "values": []
+                  },
+                  {
+                    "name": "client_secret",
+                    "description": "This\nsecret is generated and communicated by classmarkets when signing up for\nan API account.\n\n",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "ATcc/BmVhcEp-MlpQo4M6MdPtzZ4BBE2",
+                    "values": []
+                  },
+                  {
+                    "name": "scope",
+                    "description": "A comma separated\nlist of scopes for the access token. The scope determines how powerful\nthe access token is, e.g. what can be done with it. To limit the possible\ndamage that can be done if the token is disclosed, it should be as narrow\nas possible.\n\n",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "api.listings.readonly,api.users",
+                    "values": []
+                  }
+                ],
+                "attributes": {
+                  "relation": "",
+                  "uriTemplate": "/auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}"
+                },
+                "content": [],
+                "examples": [
+                  {
+                    "name": "",
+                    "description": "",
+                    "requests": [],
+                    "responses": [
+                      {
+                        "name": "200",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": "{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\",\n    \"expires_in\": 3600,\n    \"scope\": \"api.listings.readonly\",\n    \"token_type\": \"Bearer\"\n}\n",
+                        "schema": "",
+                        "content": [
+                          {
+                            "element": "asset",
+                            "attributes": {
+                              "role": "bodyExample"
+                            },
+                            "content": "{\n    \"access_token\": \"UqMv7BFvQCmE84mqG7SWOw\",\n    \"expires_in\": 3600,\n    \"scope\": \"api.listings.readonly\",\n    \"token_type\": \"Bearer\"\n}\n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "content": []
+          }
+        ]
+      },
+      {
+        "element": "category",
+        "attributes": {
+          "name": "Listings"
+        },
+        "content": [
+          {
+            "element": "copy",
+            "content": "Endpoints for retrieving listings, aka adverts, such as real estate offers, job offers.\n\nDonec aliquam ac odio quis consequat. Nullam volutpat mauris a gravida\ninterdum. Ut nec porta nisi. Aenean in libero nisi. Phasellus ut nibh facilisis\npurus laoreet suscipit. Proin ut accumsan ipsum, in condimentum ante.\nPellentesque habitant morbi tristique senectus et netus et malesuada fames ac\nturpis egestas. Suspendisse finibus ex nisi. In accumsan venenatis elit. In hac\nhabitasse platea dictumst. Proin commodo ante tellus. Donec ante mi, egestas\neget felis id, sagittis imperdiet dolor. Duis aliquam mauris sed fringilla\npharetra.\n\n"
+          },
+          {
+            "element": "resource",
+            "name": "Get job offer",
+            "description": "",
+            "uriTemplate": "/search/v1/job-offer/{id}",
+            "model": {},
+            "parameters": [],
+            "actions": [
+              {
+                "name": "Get job offer",
+                "description": "Retrieve single job offer listings by id.\n\n",
+                "method": "GET",
+                "parameters": [
+                  {
+                    "name": "id",
+                    "description": "The listing's \"id\" attribute",
+                    "type": "string",
+                    "required": true,
+                    "default": "",
+                    "example": "6JV76J-339533",
+                    "values": []
+                  }
+                ],
+                "attributes": {
+                  "relation": "self",
+                  "uriTemplate": "/search/v1/job-offer/{id}"
+                },
+                "content": [],
+                "examples": [
+                  {
+                    "name": "",
+                    "description": "",
+                    "requests": [
+                      {
+                        "name": "Retrieve Text Listing",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Authorization",
+                            "value": "Bearer UqMv7BFvQCmE84mqG7SWOw"
+                          }
+                        ],
+                        "body": "",
+                        "schema": "",
+                        "content": []
+                      }
+                    ],
+                    "responses": [
+                      {
+                        "name": "200",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": "{\n  \"id\": \"6JV76J-339533\",\n  \"meta\": {\n    \"origin\": {\n      \"url\": \"https://jobs.augsburger-allgemeine.de/stellenangebot/sachbearbeiter-verkaufsservice-export--6jv76j-339533\"\n    },\n    \"first_saved_at\": \"2016-03-16T09:37:32Z\",\n    \"last_saved_at\": \"2016-03-22T05:35:59Z\",\n    \"published_at\": \"2016-03-16T00:00:00Z\",\n    \"expires_at\": \"2038-01-19T03:14:07Z\"\n  },\n  \"expose_type\": \"premium_description\",\n  \"title\": \"Sachbearbeiter Verkaufsservice Export (m/w)\",\n  \"advertiser\": {\n    \"id\": \"66fec87e-8ff3-4c9e-8041-25a114cb1e23\",\n    \"name\": \"Zott SE & Co. KG\",\n    \"email_address\": \"karriere@zott.de\",\n    \"telephone_number\": \"+49 9078 801 0\",\n    \"url\": \"http://www.zott-dairy.com\",\n    \"address\": {\n      \"street_address\": \"Dr.-Steichele-Straße 4\",\n      \"postal_code\": \"86690\",\n      \"locality\": \"Mertingen\",\n      \"country_code\": \"DE\",\n      \"country\": \"Deutschland\",\n      \"public\": true\n    },\n    \"logos\": {\n      \"default\": \"https://cmcdn.de/c/4be/42acb25b52643374d7d8051f18e10662a1ea3.png\",\n      \"small\": \"https://cmcdn.de/c/1aa/8051f18e10662a1ea342acb25b52643374d7d.jpg\"\n    }\n  },\n  \"summary\": \"Bei Zott ist der Genuss zu Hause!\",\n  \"description\": \"<p>Bei Zott ist der Genuss zu Hause!</p>\",\n  \"url\": \"https://www.zott-dairy.com/karreer/4987621.html\",\n  \"embedded_image\": \"https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg\",\n  \"location\": [\n    {\n      \"address\": {\n        \"street_address\": \"Dr.-Steichele-Straße 4\",\n        \"postal_code\": \"86690\",\n        \"locality\": \"Mertingen\",\n        \"country_code\": \"DE\",\n        \"country\": \"Deutschland\",\n        \"public\": true\n      },\n      \"geography\": {\n        \"point\": {\n          \"lat\": 47.85474,\n          \"lon\": 13.153217\n        },\n        \"point_accuracy\": \"street\"\n      }\n    }\n  ],\n  \"attachments\": [\n    {\n      \"caption\": \"Sachbearbeiter Verkaufsservice Export.pdf\",\n      \"url\": \"https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg\",\n      \"type\": \"image/jpeg\"\n    }\n  ],\n  \"contact\": {\n    \"recipients\": [\n      {\n        \"name\": \"Dipl. Ing. John Doe\",\n        \"email_addresses\": [\n          {\n            \"value\": \"john.doe@example.com\",\n            \"label\": \"Bewerbungen\"\n          }\n        ],\n        \"phone_numbers\": [\n          {\n            \"value\": \"06022 2647529\",\n            \"label\": \"HR\"\n          },\n          {\n            \"value\": \"06022 2647530\",\n            \"label\": \"PR\"\n          }\n        ],\n        \"urls\": [\n          {\n            \"value\": \"https://example.com\",\n            \"label\": \"Homepage\"\n          }\n        ]\n      }\n    ]\n  },\n  \"industries\": [\n    {\n      \"label\": \"Finanzen und Recht\"\n    },\n    {\n      \"label\": \"Sonstige\"\n    },\n    {\n      \"label\": \"Informatik und IT\"\n    }\n  ],\n  \"job_types\": [\n    {\n      \"label\": \"Vollzeit\"\n    },\n    {\n      \"label\": \"Festanstellung\"\n    }\n  ],\n  \"tags\": [\n    \"Export\",\n    \"Sachbearbeiter/in\",\n    \"Verkaufsservice\",\n    \"Auftragsbearbeitung\"\n  ]\n}",
+                        "schema": "{\n  \"$schema\": \"http://json-schema.org/draft-04/schema#\",\n  \"type\": \"object\",\n  \"properties\": {\n    \"id\": {\n      \"type\": \"string\"\n    },\n    \"meta\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"origin\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"url\": {\n              \"type\": \"string\"\n            }\n          },\n          \"required\": [\n            \"url\"\n          ]\n        },\n        \"first_saved_at\": {\n          \"type\": \"string\"\n        },\n        \"last_saved_at\": {\n          \"type\": \"string\"\n        },\n        \"published_at\": {\n          \"type\": \"string\"\n        },\n        \"expires_at\": {\n          \"type\": \"string\"\n        }\n      },\n      \"required\": [\n        \"origin\"\n      ]\n    },\n    \"expose_type\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"premium_description\",\n        \"image_ad\",\n        \"external_expose\"\n      ]\n    },\n    \"title\": {\n      \"type\": \"string\",\n      \"description\": \"The listing's title\"\n    },\n    \"advertiser\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"id\": {\n          \"type\": \"string\"\n        },\n        \"name\": {\n          \"type\": \"string\",\n          \"description\": \"The organization's legal name\"\n        },\n        \"email_address\": {\n          \"type\": \"string\"\n        },\n        \"telephone_number\": {\n          \"type\": \"string\"\n        },\n        \"url\": {\n          \"type\": \"string\"\n        },\n        \"address\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"street_address\": {\n              \"type\": \"string\",\n              \"description\": \"Street name and number\"\n            },\n            \"postal_code\": {\n              \"type\": \"string\"\n            },\n            \"locality\": {\n              \"type\": \"string\",\n              \"description\": \"The general term for city, village etc.\"\n            },\n            \"country_code\": {\n              \"type\": \"string\",\n              \"description\": \"as defined by ISO 3166-1-alpha-2\"\n            },\n            \"country\": {\n              \"type\": \"string\",\n              \"description\": \"Localized to the country's official language\"\n            },\n            \"public\": {\n              \"type\": \"boolean\",\n              \"description\": \"Indicates if it is allowed to publicly display the street_address attribute.\\n\\nSpecifically for addresses of real estates this will often be false, so\\ncare has to be taken to not disclose sensitive information.\\n\"\n            }\n          },\n          \"required\": [\n            \"public\"\n          ]\n        },\n        \"logos\": {\n          \"type\": \"object\",\n          \"properties\": {\n            \"default\": {\n              \"type\": \"string\"\n            },\n            \"small\": {\n              \"type\": \"string\"\n            }\n          }\n        }\n      },\n      \"description\": \"The organization paying for this listing\"\n    },\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"Aka. short description\"\n    },\n    \"description\": {\n      \"type\": \"string\",\n      \"description\": \"This is the listing's content\\n\\nOnly relevant for listings with `expose_type == \\\"premium_description\\\"`. The\\ndescription may be formatted as HTML. No tags are stripped by classmarkets.\\n\"\n    },\n    \"url\": {\n      \"type\": \"string\",\n      \"description\": \"Canonical URL for this job offer. Only relevant for listings with\\n`expose_type == \\\"external_expose\\\"`.\\n\"\n    },\n    \"embedded_image\": {\n      \"type\": \"string\",\n      \"description\": \"URL to the image depicting the job offer. Only relevant for listings with\\n`expose_type == \\\"image_ad\\\"`.\\n\"\n    },\n    \"location\": {\n      \"type\": \"array\"\n    },\n    \"attachments\": {\n      \"type\": \"array\"\n    },\n    \"contact\": {\n      \"type\": \"object\",\n      \"properties\": {\n        \"recipients\": {\n          \"type\": \"array\"\n        }\n      }\n    },\n    \"industries\": {\n      \"type\": \"array\"\n    },\n    \"job_types\": {\n      \"type\": \"array\"\n    },\n    \"tags\": {\n      \"type\": \"array\"\n    }\n  },\n  \"required\": [\n    \"id\",\n    \"meta\",\n    \"expose_type\"\n  ]\n}",
+                        "content": [
+                          {
+                            "element": "dataStructure",
+                            "content": [
+                              {
+                                "element": "Job Offer Listing"
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "name": "",
+                    "description": "",
+                    "requests": [
+                      {
+                        "name": "Retrieve Image Listing",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Authorization",
+                            "value": "Bearer UqMv7BFvQCmE84mqG7SWOw"
+                          }
+                        ],
+                        "body": "",
+                        "schema": "",
+                        "content": []
+                      }
+                    ],
+                    "responses": [
+                      {
+                        "name": "200",
+                        "description": "",
+                        "headers": [
+                          {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                          }
+                        ],
+                        "body": "{\n    \"id\": \"6JYRCC-338615\",\n    \"expose_type\": \"image_ad\",\n    \"title\": \"Konstrukteur/in für Maschinenbau\",\n    \"summary\": \"Zur Verstärkung unseres Teams suchen wir zum sofortigen Eintritt eine/n\\nKonstrukteur/in für Maschinenbau\",\n    \"embedded_image\": \"https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg\",\n    \"advertiser\": {\n        \"id\": \"2915924\",\n        \"name\": \"MBU Maschinenbau GmbH.\",\n        \"logos\": {\n            \"small\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\",\n            \"default\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\"\n        }\n    },\n    \"contact\": {\n    \"recipients\": [\n            {\n                \"name\": \"Ing. Andreas Angerer\",\n                \"email_addresses\": [\n                    { \"value\": \"angerer@mbu.at\" }\n                ]\n            }\n        ]\n    },\n    \"industries\": [\n        { \"label\": \"Maschinenbau\" },\n        { \"label\": \"Elektronik\" },\n        { \"label\": \"Technik\" }\n    ],\n    \"job_types\": [\n        { \"label\": \"vollzeit\" },\n        { \"label\": \"teilzeit\" }\n    ],\n    \"tags\": [\n        \"HTL\",\n        \"Maschinen\",\n        \"Bau\",\n        \"Maschinenbau\",\n        \"Konstrukteur\",\n        \"Konstruktion\",\n        \"Montage\",\n        \"Mechatronik\"\n    ],\n    \"location\": [{\n        \"address\": {\n            \"public\": true,\n            \"postal_code\": \"5301\",\n            \"locality\": \"Eugendorf\",\n            \"country\": \"AT\"\n        },\n        \"geography\": {\n            \"point\": {\n                \"lat\": \"47.8547405\",\n                \"lon\": \"13.1532173731117\"\n            },\n            \"point_accuracy\": \"postal_code\"\n        }\n    }],\n    \"attachments\": [{\n        \"caption\": \"Softwareentwicklerin für Großdieselmotorsteuergeräte.pdf\",\n        \"url\": \"https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg\",\n        \"type\": \"image/jpeg\"\n    }],\n    \"meta\": {\n        \"first_saved_at\": \"2016-03-18T07:03:51Z\",\n        \"last_saved_at\": \"2016-03-22T07:03:33Z\",\n        \"published_at\": \"2016-03-18T00:00:00Z\",\n        \"expires_at\": \"2038-01-19T03:14:07Z\",\n        \"origin\": {\"url\": \"https://beste-stellen.salzburg.com/stellenangebot/konstrukteur-in-fuer-maschinenbau--6JYRCC-338615\"}\n    }\n}\n",
+                        "schema": "",
+                        "content": [
+                          {
+                            "element": "asset",
+                            "attributes": {
+                              "role": "bodyExample"
+                            },
+                            "content": "{\n    \"id\": \"6JYRCC-338615\",\n    \"expose_type\": \"image_ad\",\n    \"title\": \"Konstrukteur/in für Maschinenbau\",\n    \"summary\": \"Zur Verstärkung unseres Teams suchen wir zum sofortigen Eintritt eine/n\\nKonstrukteur/in für Maschinenbau\",\n    \"embedded_image\": \"https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg\",\n    \"advertiser\": {\n        \"id\": \"2915924\",\n        \"name\": \"MBU Maschinenbau GmbH.\",\n        \"logos\": {\n            \"small\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\",\n            \"default\": \"https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg\"\n        }\n    },\n    \"contact\": {\n    \"recipients\": [\n            {\n                \"name\": \"Ing. Andreas Angerer\",\n                \"email_addresses\": [\n                    { \"value\": \"angerer@mbu.at\" }\n                ]\n            }\n        ]\n    },\n    \"industries\": [\n        { \"label\": \"Maschinenbau\" },\n        { \"label\": \"Elektronik\" },\n        { \"label\": \"Technik\" }\n    ],\n    \"job_types\": [\n        { \"label\": \"vollzeit\" },\n        { \"label\": \"teilzeit\" }\n    ],\n    \"tags\": [\n        \"HTL\",\n        \"Maschinen\",\n        \"Bau\",\n        \"Maschinenbau\",\n        \"Konstrukteur\",\n        \"Konstruktion\",\n        \"Montage\",\n        \"Mechatronik\"\n    ],\n    \"location\": [{\n        \"address\": {\n            \"public\": true,\n            \"postal_code\": \"5301\",\n            \"locality\": \"Eugendorf\",\n            \"country\": \"AT\"\n        },\n        \"geography\": {\n            \"point\": {\n                \"lat\": \"47.8547405\",\n                \"lon\": \"13.1532173731117\"\n            },\n            \"point_accuracy\": \"postal_code\"\n        }\n    }],\n    \"attachments\": [{\n        \"caption\": \"Softwareentwicklerin für Großdieselmotorsteuergeräte.pdf\",\n        \"url\": \"https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg\",\n        \"type\": \"image/jpeg\"\n    }],\n    \"meta\": {\n        \"first_saved_at\": \"2016-03-18T07:03:51Z\",\n        \"last_saved_at\": \"2016-03-22T07:03:33Z\",\n        \"published_at\": \"2016-03-18T00:00:00Z\",\n        \"expires_at\": \"2038-01-19T03:14:07Z\",\n        \"origin\": {\"url\": \"https://beste-stellen.salzburg.com/stellenangebot/konstrukteur-in-fuer-maschinenbau--6JYRCC-338615\"}\n    }\n}\n"
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "content": []
+          }
+        ]
+      }
+    ]
+  },
+  "error": {
+    "code": 0,
+    "message": "",
+    "location": []
+  },
+  "warnings": []
+}

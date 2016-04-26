@@ -1,0 +1,116 @@
+# Group Listings
+
+Endpoints for retrieving listings, aka adverts, such as real estate offers, job offers.
+
+Donec aliquam ac odio quis consequat. Nullam volutpat mauris a gravida
+interdum. Ut nec porta nisi. Aenean in libero nisi. Phasellus ut nibh facilisis
+purus laoreet suscipit. Proin ut accumsan ipsum, in condimentum ante.
+Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+turpis egestas. Suspendisse finibus ex nisi. In accumsan venenatis elit. In hac
+habitasse platea dictumst. Proin commodo ante tellus. Donec ante mi, egestas
+eget felis id, sagittis imperdiet dolor. Duis aliquam mauris sed fringilla
+pharetra.
+
+## Get job offer [GET /search/v1/job-offer/{id}]
+
+Retrieve single job offer listings by id.
+
++ Relation: self
+
++ Request Retrieve Text Listing
+
+    + Header
+
+             Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
++ Parameters
+    + id: `6JV76J-339533` (string, required) - The listing's "id" attribute
+
+
++ Response 200 (application/json)
+
+
+    + Attributes (Job Offer Listing)
+
++ Request Retrieve Image Listing
+
+    + Header
+
+             Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "id": "6JYRCC-338615",
+                "expose_type": "image_ad",
+                "title": "Konstrukteur/in für Maschinenbau",
+                "summary": "Zur Verstärkung unseres Teams suchen wir zum sofortigen Eintritt eine/n\nKonstrukteur/in für Maschinenbau",
+                "embedded_image": "https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg",
+                "advertiser": {
+                    "id": "2915924",
+                    "name": "MBU Maschinenbau GmbH.",
+                    "logos": {
+                        "small": "https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg",
+                        "default": "https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg"
+                    }
+                },
+                "contact": {
+                "recipients": [
+                        {
+                            "name": "Ing. Andreas Angerer",
+                            "email_addresses": [
+                                { "value": "angerer@mbu.at" }
+                            ]
+                        }
+                    ]
+                },
+                "industries": [
+                    { "label": "Maschinenbau" },
+                    { "label": "Elektronik" },
+                    { "label": "Technik" }
+                ],
+                "job_types": [
+                    { "label": "vollzeit" },
+                    { "label": "teilzeit" }
+                ],
+                "tags": [
+                    "HTL",
+                    "Maschinen",
+                    "Bau",
+                    "Maschinenbau",
+                    "Konstrukteur",
+                    "Konstruktion",
+                    "Montage",
+                    "Mechatronik"
+                ],
+                "location": [{
+                    "address": {
+                        "public": true,
+                        "postal_code": "5301",
+                        "locality": "Eugendorf",
+                        "country": "AT"
+                    },
+                    "geography": {
+                        "point": {
+                            "lat": "47.8547405",
+                            "lon": "13.1532173731117"
+                        },
+                        "point_accuracy": "postal_code"
+                    }
+                }],
+                "attachments": [{
+                    "caption": "Softwareentwicklerin für Großdieselmotorsteuergeräte.pdf",
+                    "url": "https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg",
+                    "type": "image/jpeg"
+                }],
+                "meta": {
+                    "first_saved_at": "2016-03-18T07:03:51Z",
+                    "last_saved_at": "2016-03-22T07:03:33Z",
+                    "published_at": "2016-03-18T00:00:00Z",
+                    "expires_at": "2038-01-19T03:14:07Z",
+                    "origin": {"url": "https://beste-stellen.salzburg.com/stellenangebot/konstrukteur-in-fuer-maschinenbau--6JYRCC-338615"}
+                }
+            }
+

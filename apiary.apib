@@ -1,0 +1,451 @@
+FORMAT: 1A
+HOST: https://api.classmarkets.com
+
+# classmarkets HTTP API
+
+This is the documentation for the public classmarkets API.
+
+## About this documentation
+
+The classmarkets API documentation is authored in [API Blueprint][blueprint].
+The source is [publicly available on GitHub][github].  The canonical version is
+the HTML rendering at [http://apidocs.classmarkets.com/][canonical].
+
+It is also published to [Apiary][apiary]. Apiary offers example requests in
+several programming languages, a mock server that can be used to build client
+prototypes, as well as a console that demonstrates the API in the browser.
+
+For consumption by machines we also provide the [Blueprint AST in JSON][ast].
+<!--
+as well as automatically built [RAML][raml] and [Swagger][swagger] definitions.
+Please note that classmarkets is not using the RAML and Swagger definitions and
+can not guarantee their completeness nor correctness. Specifically, both
+formats support only one example transaction per endpoint.
+-->
+
+[blueprint]: https://apiblueprint.org/
+[github]: https://github.com/classmarkets/apidocs
+[canonical]: http://apidocs.classmarkets.com/
+[apiary]: http://docs.classmarkets.apiary.io/
+[ast]: http://apidocs.classmarkets.com/apib.json
+[raml]:  api.raml
+[swagger]: swagger.yaml
+
+## General concepts
+
+Unless otherwise noted in the documentation for a specific endpoint, the
+following concepts apply.
+
+The API transport is JSON over HTTPS. Responses will indicate a Content-Type of
+"application/json". Requests with a JSON body preferrably have a Content-Type
+of "application/json" in the header as well, or no Content-Type at all. It is
+an error to send e. g. "text/plain" in the header of a JSON request body. We
+strongly recommend to indicate the Content-Type explicitly to guarantee forward
+compatibility.
+
+Requests are authenticated using OAuth2 access tokens. This is described in
+detail below.
+
+Dates and times are represented in a format specified by [RFC 3339][rfc3339],
+such as `2016-04-24T11:29:07.612797822Z`. The precision for fractional seconds
+may vary but will not exceed nanoseconds. Times are given in UTC. Named
+timezones, such as "GMT", "CET" are not supported, because [they are
+ambiguous][timezones].
+
+[rfc3339]: http://tools.ietf.org/html/rfc3339
+[timezones]: https://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
+
+## A word on data sanity
+
+classmarkets ingests data from generally untrustworthy sources. The API does
+not attempt to sanitize this data, because what sanitization means depends on
+the context this data is used in. This means that per se you cannot trust any
+data you receive from the API, especially from the listings endpoints.
+
+This is not a hypothetical situation. There *are* "email addresses" like `';
+DROP TABLE users; --`. There *are* listing descriptions containing malformed
+HTML and potentially malicious JavaScript. It is the client's responsibility to
+sanitize and/or escape properly.
+
+## Backwards compatibility
+
+With the following exceptions, every change to the API is considered to break
+backwards compatibility and will result in a new version for affected
+endpoints. Changes we do not consider to break compatibility and may be
+introduced without prior notice are:
+
+* Adding a new attribute to a resource, be it at the top level or to any nested
+  attribute.
+* Adding a new value to an enumeration, be it an attribute or a request
+  parameter.
+* Removing a value from an enumeration, be it an attribute or a request
+  parameter, if and only if the API can assume a sensible default behaviour
+  when receiving this value in the future.
+* Adding a new, optional request parameter.
+* Adding a new endpoint.
+
+<!-- TODO: mailing list for communicating changes? What about BC breaks that are required due to security issues? -->
+
+## Data Structures
+
+### Job Offer Listing
+
++ id: `6JV76J-339533` (required)
++ meta (object, required)
+    + origin (object, required)
+        + url: `https://jobs.augsburger-allgemeine.de/stellenangebot/sachbearbeiter-verkaufsservice-export--6jv76j-339533` (string, required)
+    + first_saved_at: `2016-03-16T09:37:32Z` (string)
+    + last_saved_at: `2016-03-22T05:35:59Z` (string)
+    + published_at: `2016-03-16T00:00:00Z` (string)
+    + expires_at: `2038-01-19T03:14:07Z` (string)
+
++ expose_type (enum, required)
+    + premium_description
+    + image_ad
+    + external_expose
+
++ title: `Sachbearbeiter Verkaufsservice Export (m/w)` (string) - The listing's title
++ advertiser (Organization) - The organization paying for this listing
++ summary: `Bei Zott ist der Genuss zu Hause!` (string) - Aka. short description
++ description: `<p>Bei Zott ist der Genuss zu Hause!</p>` (string) - This is the listing's content
+    
+    Only relevant for listings with `expose_type == "premium_description"`. The
+    description may be formatted as HTML. No tags are stripped by classmarkets.
+
++ url: `https://www.zott-dairy.com/karreer/4987621.html` (string)
+
+    Canonical URL for this job offer. Only relevant for listings with
+    `expose_type == "external_expose"`.
+
++ embedded_image: `https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg` (string)
+
+    URL to the image depicting the job offer. Only relevant for listings with
+    `expose_type == "image_ad"`.
+
++ location (array[Location])
+
++ attachments (array)
+    + (object)
+        + caption: `Sachbearbeiter Verkaufsservice Export.pdf` (string)
+        + url: `https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg` (string, required)
+        + type: `image/jpeg` (string, required)
+
++ contact
+    + recipients (array)
+        + (object)
+            + name: `Dipl. Ing. John Doe` (string)
+            + email_addresses (array)
+                + (object)
+                    + value: `john.doe@example.com` (string, required)
+                    + label: `Bewerbungen` (string)
+            + phone_numbers (array)
+                + (object)
+                    + value: `06022 2647529` (string, required)
+                    + label: `HR` (string)
+                + (object)
+                    + value: `06022 2647530` (string, required)
+                    + label: `PR` (string)
+            + urls (array)
+                + (object)
+                    + value: `https://example.com` (string, required)
+                    + label: `Homepage` (string)
++ industries (array)
+    + (object)
+        + label: Finanzen und Recht
+    + (object)
+        + label: Sonstige
+    + (object)
+        + label: Informatik und IT
++ job_types (array)
+    + (object)
+        + label: Vollzeit
+    + (object)
+        + label: Festanstellung
++ tags: `Export`, `Sachbearbeiter/in`, `Verkaufsservice`, `Auftragsbearbeitung` (array[string])
+
+### Address
+
++ street_address: `Dr.-Steichele-Straße 4` (string) - Street name and number
++ postal_code: `86690` (string)
++ locality: `Mertingen` (string) - The general term for city, village etc.
++ country_code: `DE` (string) - as defined by ISO 3166-1-alpha-2
++ country: `Deutschland` (string) - Localized to the country's official language
++ public: `true` (boolean, required) - Indicates if it is allowed to publicly display the street_address attribute.
+
+    Specifically for addresses of real estates this will often be false, so
+    care has to be taken to not disclose sensitive information.
+
+    + Default: false
+
+### Organization
+
++ id: `66fec87e-8ff3-4c9e-8041-25a114cb1e23` (string)
++ name: `Zott SE & Co. KG` (string) - The organization's legal name
++ email_address: `karriere@zott.de` (string)
++ telephone_number: `+49 9078 801 0` (string)
++ url: `http://www.zott-dairy.com` (string)
++ address (Address)
++ logos
+    + `default`: `https://cmcdn.de/c/4be/42acb25b52643374d7d8051f18e10662a1ea3.png` (string)
+    + `small`: `https://cmcdn.de/c/1aa/8051f18e10662a1ea342acb25b52643374d7d.jpg` (string)
+
+### Location
+
++ address (Address)
++ geography (object)
+    + point (object)
+        + lat: `47.8547405` (number)
+        + lon: `13.1532173` (number)
+    + point_accuracy (enum)
+        + street
+        + citydistrict
+        + city
+        + district
+        + state
+        + country
+        + postal_code
+        + pobox
+        + usercomposed
+
+# Group Authentication and authorization
+
+<!--
+All requests to endpoints other than the authentication endpoints must be
+authorized with access tokens.
+
+First, acquire an access token using one of the methods described below. Then
+include your token in all further requests like so:
+
+    GET /some/endpoint HTTP/1.1
+    Host: api.classmarkets.com
+    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
+
+First, issue an Access and Refresh token using the /auth/v1/token endpoint. You
+received your client id and secret when you registered for the API.
+
+
+The scope parameter will determine how powerful the access token is, e.g. what
+can be done with it. To limit the possible damage that can be done if the token
+is disclosed, you should always make the scope as narrow as possible.
+
+
+```
+POST /auth/v1/token?grant_type=client_credentials&scope=api.listings.readonly&client_id=91a5bd6e-bbdc-4b4b-bc83-bd81259d6098&client_secret=ATcc/BmVhcEp-MlpQo4M6MdP_zZ4BBE2 HTTP/1.1
+Host: api.classmarkets.com
+Accept: application/json
+Accept-Encoding: gzip, deflate
+Content-Length: 0
+```
+
+Assuming the client id and secret are correct, the API will issue an access
+token.
+
+```
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+    "access_token": "UqMv7BFvQCmE84mqG7SWOw", 
+    "expires_in": 3600, 
+    "scope": "api.listings.readonly", 
+    "token_type": "Bearer"
+}
+```
+
+
+Include this token in all future requests like so:
+
+```
+GET /search/v1/job-offer/6JV76J-339533 HTTP/1.1
+Host: api.classmarkets.com
+Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+```
+-->
+
+## Access tokens [/auth/v1/token]
+
+The classmarkets API requires all requests to be authorized. Before you can
+interact with the API in a meaningful way, you have to acquire an access token.
+You will then present this access token in all following request headers, like
+so:
+
+    GET /some/endpoint HTTP/1.1
+    Host: api.classmarkets.com
+    Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
+If you are familiar with OAuth 2, feel free to skip the rest of this section.
+
+The string "UqMv7BFvQCmE84mqG7SWOw" in the example above is the access token.
+To you it is just an opaque string. Keep your tokens safe! Whoever gains
+access to them can use the API on your behalf.
+
+Tokens are acquired using one of the OAuth 2 authorization methods, also known
+as grant types.
+
+To get the API to issue an access token, you will have to authenticate yourself
+(e.g. prove that you are you) and also indicate what you are planning to do
+with your access token. The details of the authentication depend on the
+`grant_type` and are detailed below. The declaration of intend is always the
+same and happens with the `scope` parameter.
+
+<!--
+The access token has a limited lifetime, which is indicated in the `expires_in`
+response attribute (given in seconds). After that time, the access token is no
+longer valid and a new token must be issued. Of course you can also issue a new
+token before that time.
+-->
+
+
+### Authenticate with client credentials [POST /auth/v1/token?grant_type=client_credentials&client_id={client_id}&client_secret={client_secret}&scope={scope}]
+
+While OAuth 2 specifies several authentication methods the API only supports
+the "client credentials" method. This method is suitable for applications that
+act on their own behalf, as opposed to applications that act on behalf of a
+particular (usually human) user.
+
+Authentication is based on your client id and secret, both of which you
+received when signing up for your API account.
+
++ Parameters
+    + `client_id`: `91a5bd6e-bbdc-4b4b-bc83-bd81259d6098` (string, required) -
+      client_id identifies the software interacting with the API. This id is
+      generated and communicated by classmarkets when signing up for an API
+      account.
+    + `client_secret`: `ATcc/BmVhcEp-MlpQo4M6MdPtzZ4BBE2` (string) - This
+      secret is generated and communicated by classmarkets when signing up for
+      an API account.
+    + scope: `api.listings.readonly,api.users` (string) - A comma separated
+      list of scopes for the access token. The scope determines how powerful
+      the access token is, e.g. what can be done with it. To limit the possible
+      damage that can be done if the token is disclosed, it should be as narrow
+      as possible.
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "access_token": "UqMv7BFvQCmE84mqG7SWOw",
+                "expires_in": 3600,
+                "scope": "api.listings.readonly",
+                "token_type": "Bearer"
+            }
+
+# Group Listings
+
+Endpoints for retrieving listings, aka adverts, such as real estate offers, job offers.
+
+Donec aliquam ac odio quis consequat. Nullam volutpat mauris a gravida
+interdum. Ut nec porta nisi. Aenean in libero nisi. Phasellus ut nibh facilisis
+purus laoreet suscipit. Proin ut accumsan ipsum, in condimentum ante.
+Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac
+turpis egestas. Suspendisse finibus ex nisi. In accumsan venenatis elit. In hac
+habitasse platea dictumst. Proin commodo ante tellus. Donec ante mi, egestas
+eget felis id, sagittis imperdiet dolor. Duis aliquam mauris sed fringilla
+pharetra.
+
+## Get job offer [GET /search/v1/job-offer/{id}]
+
+Retrieve single job offer listings by id.
+
++ Relation: self
+
++ Request Retrieve Text Listing
+
+    + Header
+
+             Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
++ Parameters
+    + id: `6JV76J-339533` (string, required) - The listing's "id" attribute
+
+
++ Response 200 (application/json)
+
+
+    + Attributes (Job Offer Listing)
+
++ Request Retrieve Image Listing
+
+    + Header
+
+             Authorization: Bearer UqMv7BFvQCmE84mqG7SWOw
+
++ Response 200 (application/json)
+
+    + Body
+
+            {
+                "id": "6JYRCC-338615",
+                "expose_type": "image_ad",
+                "title": "Konstrukteur/in für Maschinenbau",
+                "summary": "Zur Verstärkung unseres Teams suchen wir zum sofortigen Eintritt eine/n\nKonstrukteur/in für Maschinenbau",
+                "embedded_image": "https://cmcdn.de/c/0d4/d0c4bdef94397b6992389a683ee2e1e106560.jpg",
+                "advertiser": {
+                    "id": "2915924",
+                    "name": "MBU Maschinenbau GmbH.",
+                    "logos": {
+                        "small": "https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg",
+                        "default": "https://cmcdn.de/c/99f/269569e589df1ba90ee61dd8988a355a4436b.jpg"
+                    }
+                },
+                "contact": {
+                "recipients": [
+                        {
+                            "name": "Ing. Andreas Angerer",
+                            "email_addresses": [
+                                { "value": "angerer@mbu.at" }
+                            ]
+                        }
+                    ]
+                },
+                "industries": [
+                    { "label": "Maschinenbau" },
+                    { "label": "Elektronik" },
+                    { "label": "Technik" }
+                ],
+                "job_types": [
+                    { "label": "vollzeit" },
+                    { "label": "teilzeit" }
+                ],
+                "tags": [
+                    "HTL",
+                    "Maschinen",
+                    "Bau",
+                    "Maschinenbau",
+                    "Konstrukteur",
+                    "Konstruktion",
+                    "Montage",
+                    "Mechatronik"
+                ],
+                "location": [{
+                    "address": {
+                        "public": true,
+                        "postal_code": "5301",
+                        "locality": "Eugendorf",
+                        "country": "AT"
+                    },
+                    "geography": {
+                        "point": {
+                            "lat": "47.8547405",
+                            "lon": "13.1532173731117"
+                        },
+                        "point_accuracy": "postal_code"
+                    }
+                }],
+                "attachments": [{
+                    "caption": "Softwareentwicklerin für Großdieselmotorsteuergeräte.pdf",
+                    "url": "https://cmcdn.de/c/2e0/4b800a8a64e4c98db3edaf52d7c499aca7531.jpg",
+                    "type": "image/jpeg"
+                }],
+                "meta": {
+                    "first_saved_at": "2016-03-18T07:03:51Z",
+                    "last_saved_at": "2016-03-22T07:03:33Z",
+                    "published_at": "2016-03-18T00:00:00Z",
+                    "expires_at": "2038-01-19T03:14:07Z",
+                    "origin": {"url": "https://beste-stellen.salzburg.com/stellenangebot/konstrukteur-in-fuer-maschinenbau--6JYRCC-338615"}
+                }
+            }
+
+
