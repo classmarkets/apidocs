@@ -1,0 +1,8 @@
+before_deploy:
+  - cd html
+deploy:
+  - provider: gcs
+    bucket: apidocs.classmarkets.com
+    access_key_id: GOOG3AATVRJGLLHKMTW7
+    secret_access_key:
+      secure: bKvuoQb+PNCPdk95n39oShyGkvCO2rUUkq8xR+5uufXPeBAM2dev9NP9X0PnKEFSvllNOk7dE7c58vEj+smBp+ea93hsLh5KclYUcby/GRIKjoBGA3WWhfqrkcb6lZM6X0G1JYRX2v7xjlsmL5lnwodKGNgObEHLC4qHLYwE2/Kd87C5etEFY/kt2qpWQG3TDpIs+eSltp3aFbLcKkDKnpB1mT8q4SNVv1zf/P8hp2Bg4xc0aJyona+NBKbCSLcEIYKHC+ujidaSGjJDavgi9S6aJehDHy2Epq6b19luIyKhAbRsfzmGi1ttcWDv/oZVLGWHPNjw6wzsby+mRsqbwAD8AtkR3+VLpTAPy/pBi3Guq7IwyXzoqpfxrF4tmIh2BfxjNuhYT8YTih9dB2syRgVzEAC6WJOkvcjCTCThDLSfXak09Q/Rb+Lw+mAdFTfaA9lcR+X5J0U3KSJLVSih8esgTtMiAF4oYIDPgX5dWQylaB/yMS2ECbJvgQXSN04lEujolQQsi/IErHHsiZcsB4wNUJSSjgFFHCuEg/Yz9u41vdk43DGB/SNlT6ndCacbTu+AKPSQUa/gQKtVKytoOXNZpePMoPJLq8/bz+Sa/tGtsPAej2Xt02I+z/15falwRolAFy22O08dcGaqA+BEzIaR6ej5UphB7YkHtg3m9wc=
